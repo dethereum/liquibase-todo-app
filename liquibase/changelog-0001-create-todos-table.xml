@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.11.xsd">
+
+  <changeSet id="0001-create-todos" author="codex">
+    <comment>Create todo table used by the API</comment>
+    <createTable tableName="todos">
+      <column name="id" type="SERIAL">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="title" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="is_complete" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <createIndex tableName="todos" indexName="idx_todos_created_at">
+      <column name="created_at"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>
