@@ -1,8 +1,10 @@
+"""FastAPI application factory and lifespan wiring."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import Optional
 
+import anyio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,7 +13,8 @@ from .routes import api_router
 from .settings import Settings
 
 
-def create_app(settings: Optional[Settings] = None) -> FastAPI:
+def create_app(settings: Settings | None = None) -> FastAPI:
+    """Create the FastAPI application configured with DB and middleware."""
     settings = settings or Settings.from_env()
     database = Database(settings)
 
@@ -20,7 +23,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         try:
             yield
         finally:
-            database.close()
+            await anyio.to_thread.run_sync(database.close)
 
     app = FastAPI(lifespan=lifespan)
     app.state.db = database
@@ -29,8 +32,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=['*'],
+        allow_headers=['*'],
     )
 
     app.include_router(api_router)

@@ -23,3 +23,6 @@ liquibase/drivers
 #python
 __pycache__
 .venv
+
+act.variables
+act.secrets

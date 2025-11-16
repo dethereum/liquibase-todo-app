@@ -1,0 +1,73 @@
+name: Dev Pipeline
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+
+
+jobs:
+  python_version:
+    name: Determine Python version
+    runs-on: ubuntu-latest
+    outputs:
+      python_version: ${{ steps.detect.outputs.python_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: detect
+        run: |
+          PY_VERSION="$(awk '/^python[[:space:]]+/ {print $2}' .tool-versions)"
+          if [[ -z "$PY_VERSION" ]]; then
+            echo "Unable to find Python version in .tool-versions" >&2
+            exit 1
+          fi
+          echo "python_version=$PY_VERSION" >> "$GITHUB_OUTPUT"
+  lint:
+    name: Ruff lint
+    runs-on: ubuntu-latest
+    needs: python_version
+    defaults:
+      run:
+        shell: bash
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ needs.python_version.outputs.python_version }}
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env:  
+          JF_URL: ${{ vars.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+      - name: Set CLI Config
+        run: jf pip-config --global=true --repo-resolve=lta-pypi
+      - name: Install dependencies
+        run: jf pip install -r requirements-dev.txt
+      - name: Ruff check
+        run: ruff check .
+  format:
+    name: Black format
+    runs-on: ubuntu-latest
+    needs: python_version
+    defaults:
+      run:
+        shell: bash
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ needs.python_version.outputs.python_version }}
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        env:  
+          JF_URL: ${{ vars.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+      - name: Set CLI Config
+        run: jf pip-config --global=true --repo-resolve=lta-pypi
+      - name: Install dependencies
+        run: jf pip install -r requirements-dev.txt
+      - name: Black check
+        run: black -S -l 80 --check .
