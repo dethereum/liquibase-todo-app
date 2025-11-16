@@ -18,3 +18,8 @@ server/node_modules
 # Liquibase local overrides
 liquibase/liquibase.local.properties
 liquibase/drivers
+
+
+#python
+__pycache__
+.venv

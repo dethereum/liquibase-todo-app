@@ -1,10 +1,11 @@
 # Liquibase Todo App
 
-A minimal full-stack todo list built with React (Vite), Node.js/Express, PostgreSQL, and Liquibase migrations.
+A minimal full-stack todo list built with React (Vite), FastAPI, PostgreSQL, and Liquibase migrations.
 
 ## Prerequisites
 
 - Node.js 18+
+- Python 3.11+
 - PostgreSQL 14+
 - Liquibase CLI (and PostgreSQL JDBC driver jar)
 
@@ -29,11 +30,13 @@ The initial changelog creates the `todos` table with `id`, `title`, `is_complete
 ```bash
 cd server
 cp .env.example .env   # adjust DATABASE_URL / PORT if needed
-npm install
-npm run dev
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python main.py
 ```
 
-The API listens on `http://localhost:5000` by default and exposes:
+The FastAPI server listens on `http://localhost:5000` by default and exposes:
 
 - `GET /api/todos` — list todos (newest first)
 - `POST /api/todos` — create `{ "title": string }`
@@ -56,9 +59,10 @@ The Vite dev server runs on `http://localhost:5173` and proxies `/api` to the ba
 
 ```
 liquibase/                  Liquibase changelog + properties
-server/                     Express API
-  src/index.js              Routes/controllers
-  src/db.js                 PostgreSQL pool helper
+server/                     FastAPI service
+  app.py                    Core API + DB access
+  main.py                   Local development entrypoint (uvicorn)
+  lambda_handler.py         AWS Lambda adapter via Mangum
 client/                     React UI
   src/App.jsx               Todo UI logic
 ```
