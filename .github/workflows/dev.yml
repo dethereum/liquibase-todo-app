@@ -71,3 +71,52 @@ jobs:
         run: jf pip install -r requirements-dev.txt
       - name: Black check
         run: black -S -l 80 --check .
+  build_lambda:
+    name: Build & Publish Lambda
+    runs-on: ubuntu-latest
+    needs:
+      - python_version
+      - lint
+      - format
+    defaults:
+      run:
+        shell: bash
+        working-directory: server
+    env:
+      JF_URL: ${{ vars.JF_URL }}
+      JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+      JFROG_CLI_BUILD_NAME: liquibase-todo-app-${{ github.run_number }}
+      JFROG_CLI_BUILD_PROJECT: lta
+      JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ needs.python_version.outputs.python_version }}
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+      - name: Build Lambda artifact
+        run: |
+          set -euo pipefail
+          dist_dir="$PWD/dist"
+          code_dir="$dist_dir/lambda_code"
+          deps_dir="$dist_dir/lambda_deps"
+          code_artifact="$dist_dir/liquibase-todo-app-code.zip"
+          deps_artifact="$dist_dir/liquibase-todo-app-deps.zip"
+          rm -rf "$dist_dir"
+          mkdir -p "$code_dir" "$deps_dir"
+          jf pip-config --global=true --repo-resolve=lta-pypi
+          jf pip install -r requirements.txt --target "$deps_dir"
+          rsync -a --exclude '__pycache__' --exclude '*.pyc' app "$code_dir"
+          cp lambda_handler.py "$code_dir/"
+          (cd "$code_dir" && zip -r "$code_artifact" .)
+          (cd "$deps_dir" && zip -r "$deps_artifact" .)
+      - name: Publish artifacts to Artifactory
+        run: |
+          jf rt upload "dist/liquibase-todo-app-code.zip" "lta-package/${GITHUB_SHA}/"
+          jf rt upload "dist/liquibase-todo-app-deps.zip" "lta-distribution/${GITHUB_SHA}/"
+      - name: Publish build info with JFrog CLI
+        run: |
+          jf rt build-collect-env
+          jf rt build-add-git
+          jf rt build-publish
