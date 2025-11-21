@@ -85,7 +85,7 @@ jobs:
     env:
       JF_URL: ${{ vars.JF_URL }}
       JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
-      JFROG_CLI_BUILD_NAME: liquibase-todo-app-${{ github.run_number }}
+      JFROG_CLI_BUILD_NAME: liquibase-todo-app
       JFROG_CLI_BUILD_PROJECT: lta
       JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
     steps:
@@ -95,28 +95,30 @@ jobs:
           python-version: ${{ needs.python_version.outputs.python_version }}
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
-      - name: Build Lambda artifact
+      - name: Setting up Python Repo
+        run: jf pipc --global=true --repo-resolve=lta-pypi
+      - name: Build the lambda
         run: |
-          set -euo pipefail
           dist_dir="$PWD/dist"
           code_dir="$dist_dir/lambda_code"
-          deps_dir="$dist_dir/lambda_deps"
+          deps_dir="$dist_dir/lambda_deps
           code_artifact="$dist_dir/liquibase-todo-app-code.zip"
           deps_artifact="$dist_dir/liquibase-todo-app-deps.zip"
-          rm -rf "$dist_dir"
+          
           mkdir -p "$code_dir" "$deps_dir"
-          jf pip-config --global=true --repo-resolve=lta-pypi
-          jf pip install -r requirements.txt --target "$deps_dir"
+          
+          jf pip install -r requirements.txt --target "$deps_dir" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
+
           rsync -a --exclude '__pycache__' --exclude '*.pyc' app "$code_dir"
           cp lambda_handler.py "$code_dir/"
+
           (cd "$code_dir" && zip -r "$code_artifact" .)
           (cd "$deps_dir" && zip -r "$deps_artifact" .)
-      - name: Publish artifacts to Artifactory
-        run: |
-          jf rt upload "dist/liquibase-todo-app-code.zip" "lta-package/${GITHUB_SHA}/"
-          jf rt upload "dist/liquibase-todo-app-deps.zip" "lta-distribution/${GITHUB_SHA}/"
+
+          jf rt u $deps_dir "lta-distribution/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
+
       - name: Publish build info with JFrog CLI
         run: |
-          jf rt build-collect-env
-          jf rt build-add-git
-          jf rt build-publish
+          jf rt bce $JFROG_CLI_BUILD_NAME ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
+          jf rt bag $JFROG_CLI_BUILD_NAME ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
+          jf rt bp $JFROG_CLI_BUILD_NAME ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
