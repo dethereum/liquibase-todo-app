@@ -112,6 +112,9 @@ jobs:
           rsync -a --exclude '__pycache__' --exclude '*.pyc' app "$code_dir"
           cp lambda_handler.py "$code_dir/"
 
+          (cd "$code_dir" && zip -qr "../$(basename "$code_artifact")" .)
+          (cd "$deps_dir" && zip -qr "../$(basename "$deps_artifact")" .)
+
           jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
 
       - name: Publish build info with JFrog CLI
