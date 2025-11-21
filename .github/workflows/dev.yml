@@ -42,7 +42,7 @@ jobs:
           JF_URL: ${{ vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
       - name: Set CLI Config
-        run: jf pip-config --global=true --repo-resolve=lta-pypi
+        run: jf pip-config --global=true --repo-resolve=lta-pypi --interactive=false
       - name: Install dependencies
         run: jf pip install -r requirements-dev.txt
       - name: Ruff check
@@ -66,7 +66,7 @@ jobs:
           JF_URL: ${{ vars.JF_URL }}
           JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
       - name: Set CLI Config
-        run: jf pip-config --global=true --repo-resolve=lta-pypi
+        run: jf pip-config --global=true --repo-resolve=lta-pypi --interactive=false
       - name: Install dependencies
         run: jf pip install -r requirements-dev.txt
       - name: Black check
@@ -104,17 +104,24 @@ jobs:
           deps_dir="$dist_dir/lambda_deps"
           code_artifact="$dist_dir/liquibase-todo-app-code.zip"
           deps_artifact="$dist_dir/liquibase-todo-app-deps.zip"
+
+          echo "MAKING DIRECTORY!"
           
           mkdir -p "$code_dir" "$deps_dir"
-          
+
+          echo "INSTALL DEPS!"
+
           jf pip install --quiet -r requirements.txt --target "$deps_dir" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
 
+          echo "PACKAGE LAMBDA!"
           rsync -a --exclude '__pycache__' --exclude '*.pyc' app "$code_dir"
           cp lambda_handler.py "$code_dir/"
 
+          echo "ZIP STUFF!"
           (cd "$code_dir" && zip -r "$code_artifact" .)
           (cd "$deps_dir" && zip -r "$deps_artifact" .)
 
+          echo "UPLOAD CODE!"
           jf rt u $code_dir "lta-distribution/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
 
       - name: Publish build info with JFrog CLI
