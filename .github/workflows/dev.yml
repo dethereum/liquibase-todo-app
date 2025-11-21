@@ -101,7 +101,7 @@ jobs:
         run: |
           dist_dir="$PWD/dist"
           code_dir="$dist_dir/lambda_code"
-          deps_dir="$dist_dir/lambda_deps
+          deps_dir="$dist_dir/lambda_deps"
           code_artifact="$dist_dir/liquibase-todo-app-code.zip"
           deps_artifact="$dist_dir/liquibase-todo-app-deps.zip"
           
