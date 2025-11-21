@@ -89,7 +89,9 @@ jobs:
       JFROG_CLI_BUILD_PROJECT: lta
       JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.python_version.outputs.python_version }}
@@ -99,15 +101,14 @@ jobs:
         run: jf pipc --global=true --repo-resolve=lta-pypi
       - name: Build the lambda
         run: |
-          dist_dir="$PWD/dist"
-          code_dir="$dist_dir/lambda_code"
-          deps_dir="$dist_dir/lambda_deps"
-          code_artifact="$dist_dir/liquibase-todo-app-code.zip"
-          deps_artifact="$dist_dir/liquibase-todo-app-deps.zip"
+          code_dir="dist/lambda_code"
+          deps_dir="dist/lambda_deps"
+          code_artifact="dist/liquibase-todo-app-code.zip"
+          deps_artifact="dist/liquibase-todo-app-deps.zip"
       
           mkdir -p "$code_dir" "$deps_dir"
 
-          jf pip install --quiet -r requirements.txt --target "$deps_dir" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
+          jf pip install -r requirements.txt --target "$deps_dir" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
 
           rsync -a --exclude '__pycache__' --exclude '*.pyc' app "$code_dir"
           cp lambda_handler.py "$code_dir/"
@@ -115,12 +116,13 @@ jobs:
           (cd "$code_dir" && zip -qr "../$(basename "$code_artifact")" .)
           (cd "$deps_dir" && zip -qr "../$(basename "$deps_artifact")" .)
 
-          jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
+          jf rt u $deps_artifact "lta-package/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
+          jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
 
       - name: Publish build info with JFrog CLI
         run: |
           jf rt bp $JFROG_CLI_BUILD_NAME ${{ github.run_number }} \
             --collect-env \
             --collect-git-info \
-            --dot-git-path ./.git \
+            --dot-git-path ../.git \
             --project $JFROG_CLI_BUILD_PROJECT
