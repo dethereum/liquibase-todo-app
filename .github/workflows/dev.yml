@@ -104,43 +104,15 @@ jobs:
           deps_dir="$dist_dir/lambda_deps"
           code_artifact="$dist_dir/liquibase-todo-app-code.zip"
           deps_artifact="$dist_dir/liquibase-todo-app-deps.zip"
-
-          echo "MAKING DIRECTORY!"
-          
+      
           mkdir -p "$code_dir" "$deps_dir"
-          
-          echo "ls dist_dir"
-          ls $dist_dir
-
-          echo "ls code_dir"
-          ls $code_dir
-
-          echo "ls deps_dir"
-          ls $deps_dir
-
-          echo "INSTALL DEPS!"
 
           jf pip install --quiet -r requirements.txt --target "$deps_dir" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
 
-          echo "PACKAGE LAMBDA!"
           rsync -a --exclude '__pycache__' --exclude '*.pyc' app "$code_dir"
           cp lambda_handler.py "$code_dir/"
 
-          echo "ls dist_dir"
-          ls $dist_dir
-
-          echo "ls code_dir"
-          ls $code_dir
-
-          echo "ZIP STUFF!"
-          (cd "$code_dir" && zip -r "$code_artifact" .)
-          (cd "$deps_dir" && zip -r "$deps_artifact" .)
-
-          echo "ls dist_dir"
-          ls $dist_dir
-
-          echo "UPLOAD CODE!"
-          jf rt u $code_dir "lta-distribution/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
+          jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT --module=exp-lambda
 
       - name: Publish build info with JFrog CLI
         run: |
