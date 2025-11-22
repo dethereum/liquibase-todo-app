@@ -13,3 +13,14 @@ variable "project_key" {
   description = "Key for the JFrog project; used as prefix for repository keys"
   type        = string
 }
+
+variable "repo_name" {
+  description = "Name of the GitHub repository"
+  type        = string
+}
+
+variable "github_access_token" {
+  description = "Access token for authenticating with GitHub"
+  type        = string
+  sensitive   = true
+}

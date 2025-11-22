@@ -43,7 +43,7 @@ resource "artifactory_virtual_pypi_repository" "pypi" {
 
 resource "project" "lta" {
   key          = var.project_key
-  display_name = "liquibase-todo-app"
+  display_name = var.repo_name
   admin_privileges {
     manage_members   = true
     manage_resources = true
@@ -63,4 +63,21 @@ resource "project_repository" "pypi" {
   for_each    = local.repo_keys
   project_key = project.lta.key
   key         = each.value
+}
+
+resource "github_repository" "gh-repo" {
+  name = var.repo_name
+}
+
+resource "github_actions_variable" "jf_url_variable" {
+  repository    = github_repository.gh-repo.name
+  variable_name = "JF_URL"
+  value         = var.artifactory_url
+}
+
+
+resource "github_actions_variable" "pypi_repository_variable" {
+  repository    = github_repository.gh-repo.name
+  variable_name = "PYPI_REPOSITORY"
+  value         = artifactory_virtual_pypi_repository.pypi.key
 }
