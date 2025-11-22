@@ -13,3 +13,15 @@ resource "github_actions_variable" "pypi_repository_variable" {
   variable_name = "PYPI_REPOSITORY"
   value         = artifactory_virtual_pypi_repository.pypi.key
 }
+
+resource "github_actions_variable" "pypi_build_name_variable" {
+  repository    = data.github_repository.gh-repo.name
+  variable_name = "PYPI_BUILD_NAME"
+  value         = var.repo_name
+}
+
+resource "github_actions_variable" "jf_project_key_variable" {
+  repository    = data.github_repository.gh-repo.name
+  variable_name = "JF_PROJECT_KEY"
+  value         = var.project_key
+}

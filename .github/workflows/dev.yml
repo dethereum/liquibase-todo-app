@@ -85,9 +85,6 @@ jobs:
     env:
       JF_URL: ${{ vars.JF_URL }}
       JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
-      JFROG_CLI_BUILD_NAME: liquibase-todo-app
-      JFROG_CLI_BUILD_PROJECT: lta
-      JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -98,7 +95,7 @@ jobs:
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
       - name: Setting up Python Repo
-        run: jf pipc --global=true --repo-resolve=lta-pypi
+        run: jf pipc --global=true --repo-resolve=${{ vars.PYPI_REPOSITORY }}
       - name: Build the lambda
         run: |
           code_dir="dist/lambda_code"
@@ -108,7 +105,7 @@ jobs:
       
           mkdir -p "$code_dir" "$deps_dir"
 
-          jf pip install -r requirements.txt --target "$deps_dir" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
+          jf pip install -r requirements.txt --target "$deps_dir" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.PROJECT_KEY }}
 
           rsync -a --exclude '__pycache__' --exclude '*.pyc' app "$code_dir"
           cp lambda_handler.py "$code_dir/"
@@ -116,13 +113,13 @@ jobs:
           (cd "$code_dir" && zip -qr "../$(basename "$code_artifact")" .)
           (cd "$deps_dir" && zip -qr "../$(basename "$deps_artifact")" .)
 
-          jf rt u $deps_artifact "lta-package/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
-          jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name $JFROG_CLI_BUILD_NAME --build-number ${{ github.run_number }} --project $JFROG_CLI_BUILD_PROJECT
+          jf rt u $deps_artifact "lta-package/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.PROJECT_KEY }}
+          jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.PROJECT_KEY }}
 
       - name: Publish build info with JFrog CLI
         run: |
-          jf rt bp $JFROG_CLI_BUILD_NAME ${{ github.run_number }} \
+          jf rt bp ${{ vars.PYPI_BUILD_NAME }} ${{ github.run_number }} \
             --collect-env \
             --collect-git-info \
             --dot-git-path ../.git \
-            --project $JFROG_CLI_BUILD_PROJECT
+            --project ${{ vars.PROJECT_KEY }}
