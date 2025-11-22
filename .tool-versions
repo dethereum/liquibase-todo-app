@@ -3,3 +3,4 @@ java openjdk-25.0.1
 liquibase 5.0.1
 python 3.13.0
 act 0.2.82
+terraform 1.14.0
