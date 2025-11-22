@@ -8,3 +8,8 @@ variable "artifactory_access_token" {
   type        = string
   sensitive   = true
 }
+
+variable "project_key" {
+  description = "Key for the JFrog project; used as prefix for repository keys"
+  type        = string
+}

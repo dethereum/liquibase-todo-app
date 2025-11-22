@@ -30,3 +30,4 @@ act.secrets
 .terraform
 terraform.tfvars
 terraform.tfvars.example
+*tfstate*
