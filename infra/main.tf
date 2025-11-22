@@ -41,6 +41,30 @@ resource "artifactory_virtual_pypi_repository" "pypi" {
   ]
 }
 
+resource "artifactory_local_generic_repository" "local-package-repo" {
+  key = "${var.project_key}-package"
+
+  project_environments = ["DEV"]
+
+  lifecycle {
+    ignore_changes = [
+      project_key
+    ]
+  }
+}
+
+resource "artifactory_local_generic_repository" "local-distribution-repo" {
+  key = "${var.project_key}-distribution"
+
+  project_environments = ["DEV"]
+
+  lifecycle {
+    ignore_changes = [
+      project_key
+    ]
+  }
+}
+
 resource "project" "lta" {
   key          = var.project_key
   display_name = var.repo_name
@@ -53,13 +77,15 @@ resource "project" "lta" {
 
 locals {
   repo_keys = {
-    "${var.project_key}-pypi-local"  = artifactory_local_pypi_repository.pypi-local.key
-    "${var.project_key}-pypi-remote" = artifactory_remote_pypi_repository.pypi-remote.key
-    "${var.project_key}-pypi"        = artifactory_virtual_pypi_repository.pypi.key
+    "${var.project_key}-pypi-local"   = artifactory_local_pypi_repository.pypi-local.key
+    "${var.project_key}-pypi-remote"  = artifactory_remote_pypi_repository.pypi-remote.key
+    "${var.project_key}-pypi"         = artifactory_virtual_pypi_repository.pypi.key
+    "${var.project_key}-package"      = artifactory_local_generic_repository.local-package-repo.key
+    "${var.project_key}-distribution" = artifactory_local_generic_repository.local-distribution-repo.key
   }
 }
 
-resource "project_repository" "pypi" {
+resource "project_repository" "repos" {
   for_each    = local.repo_keys
   project_key = project.lta.key
   key         = each.value

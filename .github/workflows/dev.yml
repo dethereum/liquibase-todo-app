@@ -113,8 +113,8 @@ jobs:
           (cd "$code_dir" && zip -qr "../$(basename "$code_artifact")" .)
           (cd "$deps_dir" && zip -qr "../$(basename "$deps_artifact")" .)
 
-          jf rt u $deps_artifact "lta-package/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.JF_PROJECT_KEY }}
-          jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.JF_PROJECT_KEY }}
+          jf rt u $deps_artifact "${{ vars.JF_PROJECT_KEY }}-package/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.JF_PROJECT_KEY }}
+          jf rt u $code_artifact "${{ vars.JF_PROJECT_KEY }}-distribution/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.JF_PROJECT_KEY }}
 
       - name: Publish build info with JFrog CLI
         run: |
