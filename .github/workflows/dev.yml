@@ -105,7 +105,7 @@ jobs:
       
           mkdir -p "$code_dir" "$deps_dir"
 
-          jf pip install -r requirements.txt --target "$deps_dir" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.PROJECT_KEY }}
+          jf pip install -r requirements.txt --target "$deps_dir" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.JF_PROJECT_KEY }}
 
           rsync -a --exclude '__pycache__' --exclude '*.pyc' app "$code_dir"
           cp lambda_handler.py "$code_dir/"
@@ -113,8 +113,8 @@ jobs:
           (cd "$code_dir" && zip -qr "../$(basename "$code_artifact")" .)
           (cd "$deps_dir" && zip -qr "../$(basename "$deps_artifact")" .)
 
-          jf rt u $deps_artifact "lta-package/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.PROJECT_KEY }}
-          jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.PROJECT_KEY }}
+          jf rt u $deps_artifact "lta-package/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.JF_PROJECT_KEY }}
+          jf rt u $code_artifact "lta-distribution/${GITHUB_SHA}/" --build-name ${{ vars.PYPI_BUILD_NAME }} --build-number ${{ github.run_number }} --project ${{ vars.JF_PROJECT_KEY }}
 
       - name: Publish build info with JFrog CLI
         run: |
@@ -122,4 +122,4 @@ jobs:
             --collect-env \
             --collect-git-info \
             --dot-git-path ../.git \
-            --project ${{ vars.PROJECT_KEY }}
+            --project ${{ vars.JF_PROJECT_KEY }}
